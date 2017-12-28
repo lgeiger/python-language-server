@@ -1,29 +1,28 @@
 # Copyright 2017 Palantir Technologies, Inc.
-import logging
 from pyls.lsp import CompletionItemKind
 from pyls import hookimpl, _utils
-
-log = logging.getLogger(__name__)
 
 
 @hookimpl
 def pyls_jedi_completions(document, position):
-    log.debug('Launching Jedi')
     definitions = document.jedi_script(position).completions()
-    definitions = [{
-        'label': _label(d),
-        'kind': _kind(d),
-        'detail': _detail(d),
-        'documentation': _utils.format_docstring(d.docstring()),
-        'sortText': _sort_text(d),
-        'insertText': d.name
-    } for d in definitions]
-    log.debug('Jedi finished')
-    return definitions
+    return [_parse_completion(d) for d in definitions]
 
 
-def _label(definition):
-    if definition.type in ('function', 'method'):
+def _parse_completion(definition):
+    d_type = definition.type
+    return {
+        'label': _label(definition, d_type),
+        'kind': _kind(d_type),
+        'detail': _detail(definition),
+        'documentation': _utils.format_docstring(definition.docstring()),
+        'sortText': _sort_text(definition),
+        'insertText': definition.name
+    }
+
+
+def _label(definition, d_type):
+    if d_type in ('function', 'method'):
         params = ", ".join(param.name for param in definition.params)
         return "{}({})".format(definition.name, params)
 
@@ -50,7 +49,7 @@ def _sort_text(definition):
     return 'a' + definition.name
 
 
-def _kind(d):
+def _kind(d_type):
     """ Return the VSCode type """
     MAP = {
         'none': CompletionItemKind.Value,
@@ -85,4 +84,4 @@ def _kind(d):
         'statement': CompletionItemKind.Keyword,
     }
 
-    return MAP.get(d.type)
+    return MAP.get(d_type)
