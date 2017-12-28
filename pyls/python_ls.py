@@ -28,7 +28,7 @@ class PythonLanguageServer(LanguageServer):
                 'resolveProvider': False,  # We may need to make this configurable
             },
             'completionProvider': {
-                'resolveProvider': False,  # We know everything ahead of time
+                'resolveProvider': True,
                 'triggerCharacters': ['.']
             },
             'documentFormattingProvider': True,
@@ -68,6 +68,10 @@ class PythonLanguageServer(LanguageServer):
             'isIncomplete': False,
             'items': flatten(completions)
         }
+
+    def resolve_completion(self, completion_item):
+        provider = self.config.plugin_settings('completion').get('provider', 'jedi')
+        return self._hook('pyls_{}_resolve_completion'.format(provider), completion_item)
 
     def definitions(self, doc_uri, position):
         return flatten(self._hook('pyls_definitions', doc_uri, position=position))
@@ -173,6 +177,9 @@ class PythonLanguageServer(LanguageServer):
 
     def m_workspace__execute_command(self, command=None, arguments=None):
         return self.execute_command(command, arguments)
+
+    def m_completion_item__resolve(self, CompletionItem):
+        return self.resolve_completion(CompletionItem)
 
 
 def flatten(list_of_lists):

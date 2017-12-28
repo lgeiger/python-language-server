@@ -28,7 +28,17 @@ def pyls_jedi_completions(config, workspace, document, position):
 
 
 @hookspec
+def pyls_jedi_resolve_completion(completion_item):
+    pass
+
+
+@hookspec
 def pyls_rope_completions(config, workspace, document, position):
+    pass
+
+
+@hookspec
+def pyls_rope_resolve_completion(completion_item):
     pass
 
 

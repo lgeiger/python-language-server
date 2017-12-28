@@ -44,6 +44,11 @@ def pyls_rope_completions(document, position):
     return definitions or None
 
 
+@hookimpl
+def pyls_rope_resolve_completion(completion_item):
+    return completion_item
+
+
 def _sort_text(definition):
     """ Ensure builtins appear at the bottom.
     Description is of format <type>: <module>.<item>

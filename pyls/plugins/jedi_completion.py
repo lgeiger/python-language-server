@@ -1,15 +1,30 @@
 # Copyright 2017 Palantir Technologies, Inc.
+import uuid
 from pyls.lsp import CompletionItemKind
 from pyls import hookimpl, _utils
+
+_JEDI_CACHE = {}
 
 
 @hookimpl
 def pyls_jedi_completions(document, position):
+    _JEDI_CACHE.clear()
     definitions = document.jedi_script(position).completions()
     return [_parse_completion(d) for d in definitions]
 
 
+@hookimpl
+def pyls_jedi_resolve_completion(completion_item):
+    _id = completion_item.get('data')
+    definition = _JEDI_CACHE.get(_id) if _id is not None else None
+    if definition is not None:
+        completion_item['documentation'] = _utils.format_docstring(definition.docstring())
+    return completion_item
+
+
 def _parse_completion(definition):
+    _id = str(uuid.uuid4())
+    _JEDI_CACHE[_id] = definition
     d_type = definition.type
     return {
         'label': _label(definition, d_type),
@@ -17,7 +32,8 @@ def _parse_completion(definition):
         'detail': _detail(definition),
         'documentation': _utils.format_docstring(definition.docstring()),
         'sortText': _sort_text(definition),
-        'insertText': definition.name
+        'insertText': definition.name,
+        'data': _id
     }
 
 
